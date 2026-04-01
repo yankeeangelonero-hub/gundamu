@@ -15,7 +15,10 @@ export function createInitialState(scenario) {
     winner: "timeout",
     scenarioId: scenario.id,
     entities: [player, ...enemies],
+    projectiles: [],
     events: [],
+    visualEffects: [],
+    nextProjectileId: 1,
     playerId: PLAYER_ID
   };
 }
@@ -66,7 +69,30 @@ export function captureFrame(state) {
       activeRuleKey: entity.activeRuleKey,
       funnelMode: entity.funnelMode,
       funnelTarget: entity.funnelTarget,
-      targetId: entity.targetId
+      targetId: entity.targetId,
+      evasionBurstTicks: entity.evasionBurstTicks,
+      evasionVector: { ...entity.evasionVector }
+    })),
+    projectiles: state.projectiles.map((projectile) => ({
+      id: projectile.id,
+      ownerId: projectile.ownerId,
+      targetId: projectile.targetId,
+      team: projectile.team,
+      weaponType: projectile.weaponType,
+      x: projectile.x,
+      y: projectile.y,
+      vx: projectile.vx,
+      vy: projectile.vy,
+      radius: projectile.radius
+    })),
+    effects: state.visualEffects.map((effect) => ({
+      type: effect.type,
+      attackerId: effect.attackerId || null,
+      targetId: effect.targetId || null,
+      origin: effect.origin ? { ...effect.origin } : null,
+      targetPoint: effect.targetPoint ? { ...effect.targetPoint } : null,
+      damage: effect.damage || 0,
+      team: effect.team || null
     })),
     summary: {
       player: player ? cloneStats(player.stats) : null
@@ -92,7 +118,12 @@ function createBaseEntity({
   shieldEfficiency,
   maxFlux,
   dissipation,
-  dodgeChance = 0
+  reactionConfidence,
+  predictionTicks,
+  weaveStrength,
+  weaveCooldown,
+  misreadChance = 0,
+  strafeBias = 1
 }) {
   return {
     id,
@@ -128,7 +159,17 @@ function createBaseEntity({
     previousIntentKey: null,
     targetId: null,
     intent: null,
-    dodgeChance,
+    reactionConfidence,
+    predictionTicks,
+    weaveStrength,
+    weaveCooldown,
+    misreadChance,
+    strafeBias,
+    evasionCooldown: 0,
+    evasionBurstTicks: 0,
+    evasionVector: { x: 0, y: 0 },
+    recentThreatId: null,
+    recentThreatTick: -999,
     stats: {
       damageDealt: 0,
       damageTaken: 0,
@@ -147,19 +188,25 @@ export function createPlayer() {
     label: "NU GUNDAM",
     team: "player",
     type: "player",
-    x: 300,
-    y: 430,
+    x: 340,
+    y: 584,
     facing: 0,
-    radius: 24,
-    hp: 1180,
-    armor: 0.12,
-    speed: 3.1,
-    accel: 0.22,
-    turnRate: radians(6.5),
+    radius: 20,
+    hp: 760,
+    armor: 0.08,
+    speed: 8.4,
+    accel: 0.98,
+    turnRate: radians(13.8),
     shieldArc: radians(112),
-    shieldEfficiency: 0.82,
-    maxFlux: 1000,
-    dissipation: 13
+    shieldEfficiency: 0.94,
+    maxFlux: 860,
+    dissipation: 18,
+    reactionConfidence: 0.97,
+    predictionTicks: 9,
+    weaveStrength: 1.9,
+    weaveCooldown: 7,
+    misreadChance: 0.02,
+    strafeBias: 1
   });
 }
 
@@ -172,17 +219,22 @@ export function createAce(id, x, y, facing) {
     x,
     y,
     facing,
-    radius: 22,
-    hp: 980,
-    armor: 0.1,
-    speed: 3.45,
-    accel: 0.24,
-    turnRate: radians(7.4),
+    radius: 19,
+    hp: 720,
+    armor: 0.07,
+    speed: 8.2,
+    accel: 0.92,
+    turnRate: radians(14.6),
     shieldArc: radians(98),
-    shieldEfficiency: 0.9,
-    maxFlux: 900,
-    dissipation: 12,
-    dodgeChance: 0.22
+    shieldEfficiency: 0.92,
+    maxFlux: 820,
+    dissipation: 17,
+    reactionConfidence: 0.9,
+    predictionTicks: 8,
+    weaveStrength: 1.75,
+    weaveCooldown: 8,
+    misreadChance: 0.08,
+    strafeBias: -1
   });
   entity.targetId = PLAYER_ID;
   entity.activeRuleLabel = "Sizing you up";
@@ -199,17 +251,22 @@ export function createGrunt(id, x, y, facing) {
     x,
     y,
     facing,
-    radius: 17,
-    hp: 280,
-    armor: 0.05,
-    speed: 2.7,
-    accel: 0.18,
-    turnRate: radians(5),
+    radius: 15,
+    hp: 135,
+    armor: 0.02,
+    speed: 6.2,
+    accel: 0.52,
+    turnRate: radians(9.1),
     shieldArc: radians(82),
-    shieldEfficiency: 1,
-    maxFlux: 420,
-    dissipation: 6,
-    dodgeChance: 0.06
+    shieldEfficiency: 0.88,
+    maxFlux: 360,
+    dissipation: 8,
+    reactionConfidence: 0.46,
+    predictionTicks: 5,
+    weaveStrength: 1.15,
+    weaveCooldown: 12,
+    misreadChance: 0.28,
+    strafeBias: id.length % 2 === 0 ? 1 : -1
   });
   entity.targetId = PLAYER_ID;
   entity.activeRuleLabel = "Forming firing line";

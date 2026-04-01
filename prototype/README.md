@@ -1,6 +1,15 @@
 # Nu Gundam Combat OS Prototype
 
-Open [index.html](/D:/Claude/Gundam/prototype/index.html) in a browser to run the prototype.
+Run the prototype through a local server:
+
+```powershell
+cd D:\Claude\Gundam\prototype
+npm run serve
+```
+
+Then open [http://localhost:4173](http://localhost:4173).
+
+Opening [index.html](/D:/Claude/Gundam/prototype/index.html) directly can leave the app blank in some browsers because the prototype now uses ES modules.
 
 What is included:
 - A deterministic single-page combat sandbox with three scenarios

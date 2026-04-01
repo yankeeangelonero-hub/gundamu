@@ -1,8 +1,8 @@
 export const TICK_RATE = 20;
 export const MAX_TICKS = 900;
-export const ARENA_WIDTH = 1400;
-export const ARENA_HEIGHT = 860;
-export const GRID_STEP = 100;
+export const ARENA_WIDTH = 1900;
+export const ARENA_HEIGHT = 1167;
+export const GRID_STEP = 120;
 
 export const PLAYER_ID = "player";
 

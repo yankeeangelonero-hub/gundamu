@@ -1,6 +1,12 @@
-import { angleBetweenPoints, distanceBetween, isAngleWithin, radians } from "./geometry.js";
+import {
+  angleBetweenPoints,
+  distanceBetween,
+  isAngleWithin,
+  normalizeVector,
+  radians
+} from "./geometry.js";
 
-export function collectAttacks(entity, target, tick, rng) {
+export function collectAttacks(entity, target, tick, state) {
   const attacks = [];
   if (!target || entity.hp <= 0 || target.hp <= 0) {
     entity.funnelMode = "idle";
@@ -16,7 +22,7 @@ export function collectAttacks(entity, target, tick, rng) {
   entity.funnelMode = weapons === "rifle_funnels" || weapons === "funnels_only" ? "active" : "idle";
 
   if ((weapons === "rifle" || weapons === "rifle_funnels") && entity.cooldowns.rifle === 0) {
-    attemptRifleShot(entity, target, rng, attacks);
+    attemptRifleShot(entity, target, state);
   }
 
   if (weapons === "saber" && entity.cooldowns.saber === 0) {
@@ -24,69 +30,96 @@ export function collectAttacks(entity, target, tick, rng) {
   }
 
   if ((weapons === "rifle_funnels" || weapons === "funnels_only") && entity.cooldowns.funnels === 0) {
-    attemptFunnelBurst(entity, target, tick, attacks);
+    attemptFunnelBurst(entity, target, tick, state);
   }
 
   return attacks;
 }
 
-export function attemptRifleShot(attacker, target, rng, attacks = []) {
+export function attemptRifleShot(attacker, target, stateOrRng, maybeState) {
+  const state = normalizeProjectileState(stateOrRng, maybeState);
   const distance = distanceBetween(attacker, target);
-  const arc = attacker.team === "player" ? radians(14) : radians(attacker.type === "ace" ? 18 : 24);
-  if (distance > 520 || !isAngleWithin(angleBetweenPoints(attacker.x, attacker.y, target.x, target.y), attacker.facing, arc)) {
-    return false;
-  }
-  if (target.dodgeChance && distance > 140 && rng() < target.dodgeChance) {
+  const arc = attacker.team === "player" ? radians(15) : radians(attacker.type === "ace" ? 19 : 26);
+  if (distance > 620 || !isAngleWithin(angleBetweenPoints(attacker.x, attacker.y, target.x, target.y), attacker.facing, arc)) {
     return false;
   }
 
-  attacker.cooldowns.rifle = attacker.type === "ace" ? 9 : (attacker.type === "grunt" ? 12 : 8);
-  attacker.fluxSoft += attacker.type === "grunt" ? 14 : 34;
-  attacks.push({
-    type: "rifle",
-    attackerId: attacker.id,
+  const speed = attacker.type === "grunt" ? 15.5 : 18.5;
+  const leadScale = attacker.type === "grunt" ? 0.45 : 0.78;
+  const predictedX = target.x + target.vx * leadScale;
+  const predictedY = target.y + target.vy * leadScale;
+  const direction = normalizeVector(predictedX - attacker.x, predictedY - attacker.y);
+
+  attacker.cooldowns.rifle = attacker.type === "ace" ? 13 : (attacker.type === "grunt" ? 18 : 12);
+  attacker.fluxSoft += attacker.type === "grunt" ? 18 : 46;
+
+  spawnProjectile(state, {
+    ownerId: attacker.id,
     targetId: target.id,
-    origin: { x: attacker.x, y: attacker.y },
-    damage: attacker.type === "grunt" ? 22 : (attacker.type === "ace" ? 36 : 52)
+    team: attacker.team,
+    weaponType: "rifle",
+    x: attacker.x + direction.x * (attacker.radius + 8),
+    y: attacker.y + direction.y * (attacker.radius + 8),
+    vx: direction.x * speed,
+    vy: direction.y * speed,
+    damage: attacker.type === "grunt" ? 58 : (attacker.type === "ace" ? 128 : 144),
+    radius: attacker.type === "grunt" ? 7 : 9,
+    lifetimeTicks: attacker.type === "grunt" ? 30 : 28
   });
+
+  pushFireEffect(state, attacker, target, "rifle");
   return true;
 }
 
 export function attemptSaberStrike(attacker, target, attacks = []) {
   const distance = distanceBetween(attacker, target);
-  if (distance > 85) {
+  if (distance > 95) {
     return false;
   }
-  attacker.cooldowns.saber = attacker.type === "ace" ? 12 : 11;
-  attacker.fluxSoft += attacker.type === "ace" ? 34 : 42;
+  attacker.cooldowns.saber = attacker.type === "ace" ? 11 : 10;
+  attacker.fluxSoft += attacker.type === "ace" ? 42 : 52;
   attacks.push({
     type: "saber",
     attackerId: attacker.id,
     targetId: target.id,
     origin: { x: attacker.x, y: attacker.y },
-    damage: attacker.type === "ace" ? 104 : 120
+    damage: attacker.type === "ace" ? 176 : 194
   });
   return true;
 }
 
-export function attemptFunnelBurst(attacker, target, tick, attacks = []) {
-  attacker.cooldowns.funnels = 13;
+export function attemptFunnelBurst(attacker, target, tick, stateOrAttacks) {
+  const state = normalizeProjectileState(stateOrAttacks);
+  attacker.cooldowns.funnels = attacker.team === "player" ? 17 : 20;
+  attacker.fluxSoft += attacker.team === "player" ? 22 : 16;
   const positions = getFunnelPositions(attacker, target, tick);
+
   for (const position of positions) {
-    attacks.push({
-      type: "funnel",
-      attackerId: attacker.id,
+    const predictedX = target.x + target.vx * 0.35;
+    const predictedY = target.y + target.vy * 0.35;
+    const direction = normalizeVector(predictedX - position.x, predictedY - position.y);
+    spawnProjectile(state, {
+      ownerId: attacker.id,
       targetId: target.id,
-      origin: { x: position.x, y: position.y },
-      damage: attacker.team === "player" ? 18 : 14
+      team: attacker.team,
+      weaponType: "funnel",
+      x: position.x,
+      y: position.y,
+      vx: direction.x * 12.8,
+      vy: direction.y * 12.8,
+      damage: attacker.team === "player" ? 36 : 30,
+      radius: 5,
+      lifetimeTicks: 28
     });
   }
+
+  pushFireEffect(state, attacker, target, "funnel");
   return true;
 }
 
 export function getFunnelPositions(owner, target, tick) {
-  const orbit = 82;
-  const speed = tick * 0.09;
+  const orbit = 92;
+  const speed = tick * 0.11;
   const baseOffset = owner.team === "player" ? 0 : Math.PI / 3;
   return [
     {
@@ -100,4 +133,51 @@ export function getFunnelPositions(owner, target, tick) {
       angle: speed - Math.PI / 2
     }
   ];
+}
+
+function spawnProjectile(state, config) {
+  if (!state.projectiles) {
+    state.projectiles = [];
+  }
+  if (!state.visualEffects) {
+    state.visualEffects = [];
+  }
+  if (!state.nextProjectileId) {
+    state.nextProjectileId = 1;
+  }
+  state.projectiles.push({
+    id: `p-${state.nextProjectileId++}`,
+    ...config,
+    previousX: config.x,
+    previousY: config.y,
+    dodgeReported: false
+  });
+}
+
+function pushFireEffect(state, attacker, target, type) {
+  if (!state.visualEffects) {
+    state.visualEffects = [];
+  }
+  state.visualEffects.push({
+    type: `${type}_muzzle`,
+    attackerId: attacker.id,
+    targetId: target.id,
+    origin: { x: attacker.x, y: attacker.y },
+    targetPoint: { x: target.x, y: target.y },
+    team: attacker.team
+  });
+}
+
+function normalizeProjectileState(stateOrRng, maybeState) {
+  if (maybeState && typeof maybeState === "object") {
+    return maybeState;
+  }
+  if (stateOrRng && typeof stateOrRng === "object" && !Array.isArray(stateOrRng)) {
+    return stateOrRng;
+  }
+  return {
+    projectiles: [],
+    visualEffects: [],
+    nextProjectileId: 1
+  };
 }

@@ -3,6 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "serve": "node ./server.js",
     "test": "node --test ./test/**/*.test.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.59.0"
   }
 }

@@ -16,17 +16,17 @@ export function evaluateCondition(condition, player, state) {
       return !!target && (target.ventTicks > 0 || target.overloadTicks > 0);
     case "rear_threat":
       return enemies.some((enemy) => (
-        distanceBetween(player, enemy) < 240 &&
-        !isAngleWithin(angleBetweenPoints(player.x, player.y, enemy.x, enemy.y), player.facing, radians(130))
+        distanceBetween(player, enemy) < 260 &&
+        !isAngleWithin(angleBetweenPoints(player.x, player.y, enemy.x, enemy.y), player.facing, radians(132))
       ));
     case "enemy_in_rifle_arc":
       return !!target &&
-        targetDistance < 520 &&
-        isAngleWithin(angleBetweenPoints(player.x, player.y, target.x, target.y), player.facing, radians(14));
+        targetDistance < 620 &&
+        isAngleWithin(angleBetweenPoints(player.x, player.y, target.x, target.y), player.facing, radians(15));
     case "enemy_near":
-      return targetDistance < 150;
+      return targetDistance < 165;
     case "enemy_far":
-      return targetDistance > 360;
+      return targetDistance > 390;
     case "outnumbered":
       return enemies.length > 1;
     case "always":
@@ -54,36 +54,36 @@ export function evaluateEnemyIntent(entity, state) {
 
   if (entity.type === "ace") {
     if (entity.ventTicks > 0 || entity.overloadTicks > 0) {
-      return createIntent("ACE_RECOVER", "ACE · recovering", "retreat", "drop", "hold_fire");
+      return createIntent("ACE_RECOVER", "ACE | recovering", "retreat", "drop", "hold_fire");
     }
-    if (totalFlux > 0.7) {
-      return createIntent("ACE_VENT", "ACE · clear flux", "retreat", "vent", "hold_fire");
+    if (totalFlux > 0.72) {
+      return createIntent("ACE_VENT", "ACE | clear flux", "retreat", "vent", "hold_fire");
     }
     if (player && (player.ventTicks > 0 || player.overloadTicks > 0)) {
-      return createIntent("ACE_PUNISH", "ACE · punish window", "charge", "drop", "saber");
+      return createIntent("ACE_PUNISH", "ACE | punish window", "charge", "drop", "saber");
     }
-    if (playerExposed && distanceToPlayer < 260) {
-      return createIntent("ACE_BREAK", "ACE · break posture", "charge", "drop", "rifle");
+    if (playerExposed && distanceToPlayer < 320) {
+      return createIntent("ACE_BREAK", "ACE | break posture", "charge", "drop", "rifle");
     }
-    if (distanceToPlayer < 120) {
-      return createIntent("ACE_KNIFE", "ACE · knife fight", "flank", "guard", "saber");
+    if (distanceToPlayer < 125) {
+      return createIntent("ACE_KNIFE", "ACE | knife fight", "flank", "guard", "saber");
     }
     if (distanceToPlayer > 360) {
-      return createIntent("ACE_CLOSE", "ACE · close angle", "charge", "adaptive", "rifle");
+      return createIntent("ACE_CLOSE", "ACE | close angle", "charge", "adaptive", "rifle_funnels");
     }
-    return createIntent("ACE_PRESSURE", "ACE · measured pressure", "hold_range", "adaptive", "rifle");
+    return createIntent("ACE_PRESSURE", "ACE | measured pressure", "hold_range", "adaptive", "rifle_funnels");
   }
 
   if (entity.ventTicks > 0 || entity.overloadTicks > 0) {
-    return createIntent("GRUNT_RECOVER", "GRUNT · recovering", "retreat", "drop", "hold_fire");
+    return createIntent("GRUNT_RECOVER", "GRUNT | recovering", "retreat", "drop", "hold_fire");
   }
   if (totalFlux > 0.82) {
-    return createIntent("GRUNT_SPIKE", "GRUNT · flux spike", "retreat", "drop", "hold_fire");
+    return createIntent("GRUNT_SPIKE", "GRUNT | flux spike", "retreat", "drop", "hold_fire");
   }
-  if (distanceToPlayer > 280) {
-    return createIntent("GRUNT_PUSH", "GRUNT · push line", "charge", "guard", "rifle");
+  if (distanceToPlayer > 290) {
+    return createIntent("GRUNT_PUSH", "GRUNT | push line", "charge", "guard", "rifle");
   }
-  return createIntent("GRUNT_LANE", "GRUNT · hold fire lane", "hold_range", "guard", "rifle");
+  return createIntent("GRUNT_LANE", "GRUNT | hold fire lane", "hold_range", "guard", "rifle");
 }
 
 function decorateIntent(rule, prefix) {
@@ -91,7 +91,7 @@ function decorateIntent(rule, prefix) {
     movement: rule.movement,
     defense: rule.defense,
     weapons: rule.weapons,
-    label: `${prefix} #${rule.priority} · ${CONDITIONS[rule.condition]}`,
+    label: `${prefix} #${rule.priority} | ${CONDITIONS[rule.condition]}`,
     key: `${prefix}:${rule.priority}:${rule.condition}:${rule.movement}:${rule.defense}:${rule.weapons}`
   };
 }

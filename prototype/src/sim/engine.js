@@ -1,9 +1,9 @@
 import { MAX_TICKS } from "../data/constants.js";
 import { SCENARIOS } from "../data/scenarios.js";
-import { applyDefenseState, checkOverload, dissipateFlux, resolveAttack, tickTimers } from "./defense.js";
+import { applyDefenseState, checkOverload, dissipateFlux, resolveAttack, resolveProjectiles, tickTimers } from "./defense.js";
 import { captureFrame, createInitialState, getEntity, getLivingEntities } from "./entities.js";
 import { evaluateEnemyIntent, evaluatePlayerIntent } from "./evaluator.js";
-import { updateMovement } from "./movement.js";
+import { planEvasion, updateMovement } from "./movement.js";
 import { createRng } from "./rng.js";
 import { summarizeRuleIntent } from "./rules.js";
 import { buildSummary } from "./summary.js";
@@ -11,25 +11,66 @@ import { assignTargets } from "./targeting.js";
 import { collectAttacks } from "./weapons.js";
 
 export function simulateBattle({ scenarioId, seed, rules }) {
+  const session = createBattleSession({ scenarioId, seed, rules });
+  while (!session.state.over && session.state.tick < MAX_TICKS) {
+    advanceBattleSession(session);
+  }
+  return finalizeBattleSession(session);
+}
+
+export function createBattleSession({ scenarioId, seed, rules }) {
   const scenario = SCENARIOS[scenarioId];
   const rng = createRng(seed);
   const state = createInitialState(scenario);
-  const frames = [captureFrame(state)];
+  return {
+    scenarioId,
+    seed,
+    rules,
+    rng,
+    state,
+    frames: [captureFrame(state)],
+    summary: null
+  };
+}
 
-  while (!state.over && state.tick < MAX_TICKS) {
-    runTick(state, rules, rng);
-    frames.push(captureFrame(state));
+export function advanceBattleSession(session) {
+  if (session.state.over || session.state.tick >= MAX_TICKS) {
+    if (!session.summary) {
+      session.summary = buildSummary(session.state);
+    }
+    return captureSessionSnapshot(session);
   }
 
+  runTick(session.state, session.rules, session.rng);
+  const frame = captureFrame(session.state);
+  session.frames.push(frame);
+
+  if (session.state.over || session.state.tick >= MAX_TICKS) {
+    session.summary = buildSummary(session.state);
+  }
+
+  return frame;
+}
+
+export function finalizeBattleSession(session) {
+  if (!session.summary) {
+    session.summary = buildSummary(session.state);
+  }
+  return captureSessionSnapshot(session);
+}
+
+export function captureSessionSnapshot(session) {
   return {
-    frames,
-    events: [...state.events],
-    summary: buildSummary(state)
+    frames: [...session.frames],
+    events: [...session.state.events],
+    summary: session.summary,
+    state: session.state
   };
 }
 
 export function runTick(state, rules, rng) {
   state.tick += 1;
+  state.visualEffects = [];
   assignTargets(state);
 
   for (const entity of getLivingEntities(state.entities)) {
@@ -44,21 +85,23 @@ export function runTick(state, rules, rng) {
   }
 
   for (const entity of getLivingEntities(state.entities)) {
-    updateMovement(entity, getEntity(state.entities, entity.targetId));
+    const target = getEntity(state.entities, entity.targetId);
+    planEvasion(entity, state, rng, target);
+    updateMovement(entity, target, state);
   }
 
   for (const entity of getLivingEntities(state.entities)) {
     applyDefenseState(entity, getEntity(state.entities, entity.targetId), state);
   }
 
-  const attacks = [];
   for (const entity of getLivingEntities(state.entities)) {
-    attacks.push(...collectAttacks(entity, getEntity(state.entities, entity.targetId), state.tick, rng));
+    const attacks = collectAttacks(entity, getEntity(state.entities, entity.targetId), state.tick, state);
+    for (const attack of attacks) {
+      resolveAttack(attack, state, getEntity);
+    }
   }
 
-  for (const attack of attacks) {
-    resolveAttack(attack, state, getEntity);
-  }
+  resolveProjectiles(state, getEntity);
 
   for (const entity of getLivingEntities(state.entities)) {
     dissipateFlux(entity);

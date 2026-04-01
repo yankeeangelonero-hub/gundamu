@@ -70,7 +70,7 @@
         <section class="panel battle-panel">
           <div class="panel-head panel-head-inline">
             <div>
-              <h2>Battle Playback</h2>
+              <h2>Battle View</h2>
               <p id="battleStatus">Awaiting simulation.</p>
               <p id="battleDiagnosis" class="battle-diagnosis"></p>
             </div>
@@ -89,7 +89,9 @@
             </div>
           </div>
 
-          <canvas id="battleCanvas" width="1160" height="680"></canvas>
+          <div id="battleViewport" class="battle-viewport">
+            <canvas id="battleCanvas"></canvas>
+          </div>
 
           <div class="timeline-wrap">
             <input id="timelineSlider" type="range" min="0" max="0" value="0">
