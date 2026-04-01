@@ -18,12 +18,12 @@ export function simulateBattle({ scenarioId, seed, rules }) {
   return finalizeBattleSession(session);
 }
 
-export function createBattleSession({ scenarioId, seed, rules }) {
-  const scenario = SCENARIOS[scenarioId];
+export function createBattleSession({ scenarioId, seed, rules, scenario }) {
+  const resolvedScenario = scenario || SCENARIOS[scenarioId];
   const rng = createRng(seed);
-  const state = createInitialState(scenario);
+  const state = createInitialState(resolvedScenario);
   return {
-    scenarioId,
+    scenarioId: resolvedScenario.id,
     seed,
     rules,
     rng,

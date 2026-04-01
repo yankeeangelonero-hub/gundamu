@@ -21,7 +21,7 @@ export function drawBattleFrame(ctx, canvas, frame) {
   drawEffects(ctx, frame.effects || [], scale);
 
   for (const entity of frame.entities) {
-    if (entity.hp <= 0 || entity.funnelMode !== "active" || !entity.funnelTarget) {
+    if (entity.hp <= 0 || entity.funnelMode !== "active" || !entity.funnelTarget || entity.funnelVisualTicks <= 0) {
       continue;
     }
     const targetEntity = frame.entities.find((candidate) => candidate.id === entity.funnelTarget);

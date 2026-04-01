@@ -1,18 +1,21 @@
-import { RULE_PRESETS } from "./data/presets.js";
-import { SCENARIOS } from "./data/scenarios.js";
+import { BUILD_PRESETS, cloneBuild, compileBuildToRuleSet } from "./data/builds.js";
+import { buildScenario, clampJeganCount, SCENARIOS } from "./data/scenarios.js";
 import { renderTimelineMarkers, drawBattleFrame } from "./render/battle-renderer.js";
 import { advanceBattleSession, createBattleSession, finalizeBattleSession } from "./sim/engine.js";
 import { sanitizeSeed } from "./sim/rng.js";
 import { cloneRuleSet, prettifyRuleKey } from "./sim/rules.js";
 import { renderRunningState, renderSummary, renderFrameReadouts } from "./ui/panels.js";
+import { loadBuildPreset, renderBuildEditor } from "./ui/build-editor.js";
 import { createRealtimeController } from "./ui/realtime-controller.js";
-import { renderRuleEditor } from "./ui/rule-editor.js";
 
 const dom = {};
 const state = {
-  rules: cloneRuleSet(RULE_PRESETS.discipline),
+  build: cloneBuild(BUILD_PRESETS.beam_duelist),
+  rules: cloneRuleSet(compileBuildToRuleSet(BUILD_PRESETS.beam_duelist)),
   scenarioId: "ace_duel",
   seed: 1979,
+  jeganCount: 3,
+  scenario: buildScenario("ace_duel", 3),
   sim: null,
   session: null
 };
@@ -25,20 +28,24 @@ function init() {
   bindDom();
   populateScenarioSelect();
   bindEvents();
-  renderRules();
+  syncRulesFromBuild();
+  renderBuild();
   runSimulation();
 }
 
 function bindDom() {
   dom.scenarioSelect = document.getElementById("scenarioSelect");
   dom.seedInput = document.getElementById("seedInput");
+  dom.jeganCountSelect = document.getElementById("jeganCountSelect");
   dom.runButton = document.getElementById("runButton");
   dom.resetRulesButton = document.getElementById("resetRulesButton");
-  dom.loadDisciplineButton = document.getElementById("loadDisciplineButton");
-  dom.loadPunishButton = document.getElementById("loadPunishButton");
+  dom.loadBeamDuelistButton = document.getElementById("loadBeamDuelistButton");
+  dom.loadPincerPunishButton = document.getElementById("loadPincerPunishButton");
   dom.scenarioBrief = document.getElementById("scenarioBrief");
-  dom.interruptRules = document.getElementById("interruptRules");
-  dom.doctrineRules = document.getElementById("doctrineRules");
+  dom.suitCorePanel = document.getElementById("suitCorePanel");
+  dom.equipmentRack = document.getElementById("equipmentRack");
+  dom.chainRack = document.getElementById("chainRack");
+  dom.buildWarnings = document.getElementById("buildWarnings");
   dom.battleViewport = document.getElementById("battleViewport");
   dom.battleCanvas = document.getElementById("battleCanvas");
   dom.canvasContext = dom.battleCanvas.getContext("2d");
@@ -63,7 +70,7 @@ function bindDom() {
 function bindEvents() {
   dom.scenarioSelect.addEventListener("change", () => {
     state.scenarioId = dom.scenarioSelect.value;
-    renderScenarioBrief();
+    refreshScenario();
     runSimulation();
   });
 
@@ -73,22 +80,35 @@ function bindEvents() {
     runSimulation();
   });
 
+  dom.jeganCountSelect.addEventListener("change", () => {
+    state.jeganCount = clampJeganCount(dom.jeganCountSelect.value);
+    dom.jeganCountSelect.value = String(state.jeganCount);
+    refreshScenario();
+    runSimulation();
+  });
+
   dom.runButton.addEventListener("click", () => {
     startLiveBattle();
   });
+
   dom.resetRulesButton.addEventListener("click", () => {
-    state.rules = cloneRuleSet(RULE_PRESETS.discipline);
-    renderRules();
+    state.build = loadBuildPreset("beam_duelist");
+    syncRulesFromBuild();
+    renderBuild();
     runSimulation();
   });
-  dom.loadDisciplineButton.addEventListener("click", () => {
-    state.rules = cloneRuleSet(RULE_PRESETS.discipline);
-    renderRules();
+
+  dom.loadBeamDuelistButton.addEventListener("click", () => {
+    state.build = loadBuildPreset("beam_duelist");
+    syncRulesFromBuild();
+    renderBuild();
     runSimulation();
   });
-  dom.loadPunishButton.addEventListener("click", () => {
-    state.rules = cloneRuleSet(RULE_PRESETS.punish);
-    renderRules();
+
+  dom.loadPincerPunishButton.addEventListener("click", () => {
+    state.build = loadBuildPreset("pincer_punish");
+    syncRulesFromBuild();
+    renderBuild();
     runSimulation();
   });
 
@@ -132,23 +152,28 @@ function populateScenarioSelect() {
   }
   dom.scenarioSelect.value = state.scenarioId;
   dom.seedInput.value = String(state.seed);
+  dom.jeganCountSelect.value = String(state.jeganCount);
   renderScenarioBrief();
 }
 
 function renderScenarioBrief() {
-  dom.scenarioBrief.textContent = SCENARIOS[state.scenarioId].description;
+  const note = state.scenarioId === "ace_duel" ? " Jegan count is ignored in this scenario." : "";
+  dom.scenarioBrief.textContent = `${state.scenario.description}${note}`;
 }
 
-function renderRules() {
-  renderRuleEditor({
-    ruleSet: state.rules,
+function renderBuild() {
+  renderBuildEditor({
+    build: state.build,
     roots: {
-      interrupts: dom.interruptRules,
-      doctrine: dom.doctrineRules
+      suitCore: dom.suitCorePanel,
+      equipmentRack: dom.equipmentRack,
+      chainRack: dom.chainRack,
+      buildWarnings: dom.buildWarnings
     },
-    onRuleSetChange(nextRuleSet) {
-      state.rules = cloneRuleSet(nextRuleSet);
-      renderRules();
+    onBuildChange(nextBuild) {
+      state.build = nextBuild;
+      syncRulesFromBuild();
+      renderBuild();
       buildInitialBattleState();
     }
   });
@@ -182,8 +207,12 @@ function buildInitialBattleState() {
   }
   state.seed = sanitizeSeed(dom.seedInput.value);
   dom.seedInput.value = String(state.seed);
+  refreshScenario();
+  syncRulesFromBuild();
+
   state.session = createBattleSession({
     scenarioId: state.scenarioId,
+    scenario: state.scenario,
     seed: state.seed,
     rules: cloneRuleSet(state.rules)
   });
@@ -215,7 +244,7 @@ function buildInitialBattleState() {
   dom.timelineSlider.max = "0";
   dom.timelineSlider.value = "0";
   renderTimelineMarkers(dom.timelineMarkers, [], 1, jumpToTick);
-  renderRunningState(dom, state.session.frames[0], SCENARIOS[state.scenarioId].name, state.seed, [], []);
+  renderRunningState(dom, state.session.frames[0], state.scenario.name, state.seed, [], []);
   renderFrame(0);
 }
 
@@ -229,7 +258,7 @@ function handleLiveTick() {
   renderRunningState(
     dom,
     frame,
-    SCENARIOS[state.scenarioId].name,
+    state.scenario.name,
     state.seed,
     state.session.state.events,
     buildLiveUsage(state.session.state)
@@ -240,7 +269,7 @@ function handleLiveTick() {
 
 function handleBattleComplete() {
   state.sim = finalizeBattleSession(state.session);
-  renderSummary(dom, state.sim, SCENARIOS[state.scenarioId].name, state.seed, jumpToTick);
+  renderSummary(dom, state.sim, state.scenario.name, state.seed, jumpToTick);
   dom.timelineSlider.disabled = false;
   dom.playPauseButton.textContent = "Run Again";
 }
@@ -263,21 +292,30 @@ function buildLiveUsage(currentState) {
 
 function describeUsage(ruleKey) {
   if (ruleKey.includes("flux_high")) {
-    return "Safety logic stepping in before the machine panics.";
+    return "Exit logic pulling the suit out before it panics.";
   }
   if (ruleKey.includes("enemy_venting")) {
-    return "Punish logic converting enemy mistakes into decisive pressure.";
+    return "Convert logic cashing in when the enemy gives away tempo.";
   }
   if (ruleKey.includes("rear_threat")) {
-    return "Situational awareness against flanks and escort pressure.";
+    return "Approach or exit logic stabilizing flank pressure.";
   }
-  return "Core doctrine shaping the suit's rhythm when no interrupt fires.";
+  return "Suit core and chain setup shaping the duel rhythm.";
 }
 
 function startLiveBattle() {
   buildInitialBattleState();
   controller.startLive();
   dom.playPauseButton.textContent = "Pause";
+}
+
+function refreshScenario() {
+  state.scenario = buildScenario(state.scenarioId, state.jeganCount);
+  renderScenarioBrief();
+}
+
+function syncRulesFromBuild() {
+  state.rules = cloneRuleSet(compileBuildToRuleSet(state.build));
 }
 
 function handleViewportResize() {

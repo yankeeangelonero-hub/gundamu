@@ -69,6 +69,7 @@ export function captureFrame(state) {
       activeRuleKey: entity.activeRuleKey,
       funnelMode: entity.funnelMode,
       funnelTarget: entity.funnelTarget,
+      funnelVisualTicks: entity.funnelVisualTicks,
       targetId: entity.targetId,
       evasionBurstTicks: entity.evasionBurstTicks,
       evasionVector: { ...entity.evasionVector }
@@ -154,6 +155,7 @@ function createBaseEntity({
     cooldowns: { rifle: 0, saber: 0, funnels: 0 },
     funnelMode: "idle",
     funnelTarget: null,
+    funnelVisualTicks: 0,
     activeRuleKey: "BOOT",
     activeRuleLabel: "Booting Combat OS",
     previousIntentKey: null,

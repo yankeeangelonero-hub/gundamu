@@ -10,16 +10,23 @@ export function collectAttacks(entity, target, tick, state) {
   const attacks = [];
   if (!target || entity.hp <= 0 || target.hp <= 0) {
     entity.funnelMode = "idle";
+    entity.funnelVisualTicks = 0;
     return attacks;
   }
   if (entity.ventTicks > 0 || entity.overloadTicks > 0) {
     entity.funnelMode = "idle";
+    entity.funnelVisualTicks = 0;
     return attacks;
   }
 
   const weapons = entity.intent ? entity.intent.weapons : "hold_fire";
   entity.funnelTarget = target.id;
-  entity.funnelMode = weapons === "rifle_funnels" || weapons === "funnels_only" ? "active" : "idle";
+  const usingFunnels = weapons === "rifle_funnels" || weapons === "funnels_only";
+  const funnelsDeployed = usingFunnels || entity.cooldowns.funnels > 0 || entity.funnelVisualTicks > 0;
+  entity.funnelMode = funnelsDeployed ? "active" : "idle";
+  if (usingFunnels && entity.funnelVisualTicks < 18) {
+    entity.funnelVisualTicks = 18;
+  }
 
   if ((weapons === "rifle" || weapons === "rifle_funnels") && entity.cooldowns.rifle === 0) {
     attemptRifleShot(entity, target, state);
@@ -92,6 +99,7 @@ export function attemptFunnelBurst(attacker, target, tick, stateOrAttacks) {
   const state = normalizeProjectileState(stateOrAttacks);
   attacker.cooldowns.funnels = attacker.team === "player" ? 17 : 20;
   attacker.fluxSoft += attacker.team === "player" ? 22 : 16;
+  attacker.funnelVisualTicks = attacker.cooldowns.funnels + 18;
   const positions = getFunnelPositions(attacker, target, tick);
 
   for (const position of positions) {
@@ -118,7 +126,7 @@ export function attemptFunnelBurst(attacker, target, tick, stateOrAttacks) {
 }
 
 export function getFunnelPositions(owner, target, tick) {
-  const orbit = 92;
+  const orbit = 132;
   const speed = tick * 0.11;
   const baseOffset = owner.team === "player" ? 0 : Math.PI / 3;
   return [

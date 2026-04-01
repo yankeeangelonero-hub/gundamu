@@ -7,7 +7,7 @@
 
 ## Prototype Decisions
 - Stay in a browser-native static prototype for now.
-- Keep the editor simple: `Interrupts` plus `Doctrine`.
+- Replace the current `Interrupts + Doctrine` mental model with `Suit Core + Equipment Rack + Combat Chain`.
 - Do not move to Godot, React, or backend systems until the core loop is clearly landing.
 
 ## Current Combat Feel Targets
@@ -22,6 +22,7 @@
 ## Working Notes
 - Live battle loop is the correct direction; replay is secondary.
 - Readability matters as much as raw simulation depth.
+- The structural redesign should make the player feel like they are configuring a combat plan, not authoring low-level AI.
 - Tuning should continue to favor:
   - stronger boost-dash identity
   - clearer shield blocks vs slips vs direct hits
@@ -32,3 +33,4 @@
 - Should funnels spread wider and feel more like a pincer than a tight orbit?
 - Should projectile travel be slowed slightly for readability, or is current speed correct?
 - Should impacts add more camera feedback?
+- When the UI redesign starts, should the first implemented build path be `Beam Duelist` or `Pincer Punish`?

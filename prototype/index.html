@@ -23,7 +23,7 @@
         <section class="panel controls-panel">
           <div class="panel-head">
             <h2>Sandbox</h2>
-            <p>One suit. One rival. One doctrine stack.</p>
+            <p>One suit. One rival. One combat chain.</p>
           </div>
 
           <label class="field">
@@ -36,33 +36,52 @@
             <input id="seedInput" type="number" min="1" step="1" value="1979">
           </label>
 
+          <label class="field">
+            <span>Jegans</span>
+            <select id="jeganCountSelect">
+              <option value="3" selected>3</option>
+              <option value="5">5</option>
+              <option value="7">7</option>
+              <option value="9">9</option>
+            </select>
+          </label>
+
           <div class="button-row">
             <button id="runButton" class="btn btn-primary" type="button">Run Battle</button>
             <button id="resetRulesButton" class="btn" type="button">Reset Rules</button>
           </div>
 
           <div class="button-row">
-            <button id="loadDisciplineButton" class="btn" type="button">Load Midrange Discipline</button>
-            <button id="loadPunishButton" class="btn" type="button">Load Vent Punish</button>
+            <button id="loadBeamDuelistButton" class="btn" type="button">Load Beam Duelist</button>
+            <button id="loadPincerPunishButton" class="btn" type="button">Load Pincer Punish</button>
           </div>
 
           <div class="scenario-brief" id="scenarioBrief"></div>
         </section>
 
-        <section class="panel rule-panel">
+        <section class="panel build-panel">
           <div class="panel-head">
-            <h2>Interrupts</h2>
-            <p>Urgent overrides that make the OS look brilliant.</p>
+            <h2>Suit Core</h2>
+            <p>The built-in combat OS that keeps Nu Gundam competent before your build layers on top.</p>
           </div>
-          <div id="interruptRules" class="rule-stack"></div>
+          <div id="suitCorePanel"></div>
         </section>
 
-        <section class="panel rule-panel">
+        <section class="panel build-panel">
           <div class="panel-head">
-            <h2>Doctrine</h2>
-            <p>Default behavior when nothing urgent is happening.</p>
+            <h2>Equipment Rack</h2>
+            <p>Pick the physical tools and fire-control packages the suit brings into the fight.</p>
           </div>
-          <div id="doctrineRules" class="rule-stack"></div>
+          <div id="equipmentRack" class="rule-stack"></div>
+        </section>
+
+        <section class="panel build-panel">
+          <div class="panel-head">
+            <h2>Combat Chain</h2>
+            <p>Shape the plan: approach, setup, convert, then exit safely back to the suit core.</p>
+          </div>
+          <div id="chainRack" class="rule-stack"></div>
+          <div id="buildWarnings" class="build-warnings"></div>
         </section>
       </aside>
 

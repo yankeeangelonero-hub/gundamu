@@ -145,6 +145,7 @@ h1 {
 
 .controls-panel,
 .rule-panel,
+.build-panel,
 .battle-panel,
 .readout-panel,
 .usage-panel,
@@ -243,6 +244,96 @@ input {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.build-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.core-summary,
+.build-name,
+.build-warning,
+.slot-card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 10px;
+  background: linear-gradient(180deg, rgba(14, 23, 39, 0.96), rgba(9, 15, 24, 0.98));
+}
+
+.core-summary p,
+.build-name p,
+.slot-copy {
+  margin-top: 6px;
+  color: var(--muted);
+  line-height: 1.35;
+  font-size: 0.84rem;
+}
+
+.trait-wrap,
+.build-warnings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.trait-wrap {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.trait-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 5px 10px;
+  border: 1px solid rgba(88, 215, 255, 0.22);
+  background: rgba(88, 215, 255, 0.08);
+  color: #dff8ff;
+  font-size: 0.78rem;
+}
+
+.trait-chip.locked {
+  border-color: rgba(244, 179, 63, 0.24);
+  background: rgba(244, 179, 63, 0.08);
+  color: #ffe1a5;
+}
+
+.build-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 10px;
+  background: rgba(8, 13, 22, 0.78);
+}
+
+.slot-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.slot-head span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.build-warning {
+  color: #ffd7ba;
+  background: rgba(45, 21, 10, 0.64);
+  border-color: rgba(244, 179, 63, 0.2);
+  font-size: 0.82rem;
+}
+
+.build-warning.ok {
+  color: #d7fff0;
+  background: rgba(10, 39, 30, 0.58);
+  border-color: rgba(111, 244, 190, 0.18);
 }
 
 .rule-card {

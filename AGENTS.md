@@ -17,6 +17,8 @@ This file is the shared handoff surface for future coding agents working in this
   - shield interception and flux
   - visible funnels and beam trails
 - Automated checks live under [prototype/test](/D:/Claude/Gundam/prototype/test)
+- Current design direction is shifting away from `Interrupts + Doctrine` toward `Suit Core + Equipment Rack + Combat Chain`
+- The current structure spec lives in [Documentation/CARD_STACK_CHAIN_SYSTEM_V1.md](/D:/Claude/Gundam/Documentation/CARD_STACK_CHAIN_SYSTEM_V1.md)
 
 ## Runbook
 - Start local server:
@@ -46,3 +48,4 @@ This file is the shared handoff surface for future coding agents working in this
 ## Next Handoff Notes
 - Add concise architecture notes here when systems shift materially.
 - Add tuning decisions here when they affect the intended combat feel.
+- If implementing the UI redesign, treat the new card-stack-chain spec as the source of truth rather than extending the old rule editor.

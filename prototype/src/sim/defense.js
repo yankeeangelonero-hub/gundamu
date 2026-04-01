@@ -11,6 +11,7 @@ export function tickTimers(entity) {
   entity.cooldowns.rifle = Math.max(0, entity.cooldowns.rifle - 1);
   entity.cooldowns.saber = Math.max(0, entity.cooldowns.saber - 1);
   entity.cooldowns.funnels = Math.max(0, entity.cooldowns.funnels - 1);
+  entity.funnelVisualTicks = Math.max(0, (entity.funnelVisualTicks || 0) - 1);
   entity.evasionCooldown = Math.max(0, entity.evasionCooldown - 1);
 
   if (entity.evasionBurstTicks > 0) {
@@ -26,6 +27,7 @@ export function tickTimers(entity) {
     entity.fluxHard *= 0.64;
     entity.shieldUp = false;
     entity.funnelMode = "idle";
+    entity.funnelVisualTicks = 0;
   }
 
   if (entity.overloadTicks > 0) {
@@ -34,6 +36,7 @@ export function tickTimers(entity) {
     entity.fluxHard *= 0.76;
     entity.shieldUp = false;
     entity.funnelMode = "idle";
+    entity.funnelVisualTicks = 0;
   }
 }
 
