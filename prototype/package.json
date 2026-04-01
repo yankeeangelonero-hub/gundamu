@@ -1,0 +1,8 @@
+{
+  "name": "nu-gundam-combat-os-prototype",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test ./test/**/*.test.js"
+  }
+}

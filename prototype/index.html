@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nu Gundam Combat OS Prototype</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Prototype / Combat OS Sandbox</p>
+        <h1>Nu Gundam Programming Duel</h1>
+      </div>
+      <div class="topbar-copy">
+        <p>Test whether priority logic, flux discipline, shield arcs, and funnel punish windows make the player feel like they authored an elite mobile suit mind.</p>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="sidebar">
+        <section class="panel controls-panel">
+          <div class="panel-head">
+            <h2>Sandbox</h2>
+            <p>One suit. One rival. One doctrine stack.</p>
+          </div>
+
+          <label class="field">
+            <span>Scenario</span>
+            <select id="scenarioSelect"></select>
+          </label>
+
+          <label class="field">
+            <span>Seed</span>
+            <input id="seedInput" type="number" min="1" step="1" value="1979">
+          </label>
+
+          <div class="button-row">
+            <button id="runButton" class="btn btn-primary" type="button">Run Battle</button>
+            <button id="resetRulesButton" class="btn" type="button">Reset Rules</button>
+          </div>
+
+          <div class="button-row">
+            <button id="loadDisciplineButton" class="btn" type="button">Load Midrange Discipline</button>
+            <button id="loadPunishButton" class="btn" type="button">Load Vent Punish</button>
+          </div>
+
+          <div class="scenario-brief" id="scenarioBrief"></div>
+        </section>
+
+        <section class="panel rule-panel">
+          <div class="panel-head">
+            <h2>Interrupts</h2>
+            <p>Urgent overrides that make the OS look brilliant.</p>
+          </div>
+          <div id="interruptRules" class="rule-stack"></div>
+        </section>
+
+        <section class="panel rule-panel">
+          <div class="panel-head">
+            <h2>Doctrine</h2>
+            <p>Default behavior when nothing urgent is happening.</p>
+          </div>
+          <div id="doctrineRules" class="rule-stack"></div>
+        </section>
+      </aside>
+
+      <section class="main-stage">
+        <section class="panel battle-panel">
+          <div class="panel-head panel-head-inline">
+            <div>
+              <h2>Battle Playback</h2>
+              <p id="battleStatus">Awaiting simulation.</p>
+              <p id="battleDiagnosis" class="battle-diagnosis"></p>
+            </div>
+            <div class="playback-controls">
+              <button id="playPauseButton" class="btn btn-primary" type="button">Play</button>
+              <button id="restartButton" class="btn" type="button">Restart</button>
+              <label class="inline-field">
+                <span>Speed</span>
+                <select id="speedSelect">
+                  <option value="0.5">0.5x</option>
+                  <option value="1" selected>1x</option>
+                  <option value="2">2x</option>
+                  <option value="4">4x</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <canvas id="battleCanvas" width="1160" height="680"></canvas>
+
+          <div class="timeline-wrap">
+            <input id="timelineSlider" type="range" min="0" max="0" value="0">
+            <div id="timelineMarkers" class="timeline-markers" aria-hidden="true"></div>
+            <div class="timeline-readout">
+              <span id="timelineTick">Tick 0</span>
+              <span id="timelineRule">No active doctrine yet.</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="analysis-grid">
+          <section class="panel readout-panel">
+            <div class="panel-head">
+              <h2>Command Readout</h2>
+              <p>What the machine is doing right now.</p>
+            </div>
+            <div class="readout-grid">
+              <div class="readout-card">
+                <span class="readout-label">Player</span>
+                <div id="playerStats" class="readout-body"></div>
+              </div>
+              <div class="readout-card">
+                <span class="readout-label">Primary Target</span>
+                <div id="targetStats" class="readout-body"></div>
+              </div>
+              <div class="readout-card readout-card-wide">
+                <span class="readout-label">System Insight</span>
+                <ul id="insightList" class="insight-list"></ul>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel usage-panel">
+            <div class="panel-head">
+              <h2>Rule Usage</h2>
+              <p>Which parts of the combat brain actually carried the fight.</p>
+            </div>
+            <div id="usageList" class="usage-list"></div>
+          </section>
+
+          <section class="panel event-panel">
+            <div class="panel-head">
+              <h2>Battle Events</h2>
+              <p>Jump to the moment where a decision mattered.</p>
+            </div>
+            <div id="eventList" class="event-list"></div>
+          </section>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
